@@ -20,11 +20,14 @@ public class UserControllerTest {
 
     private UserController userController;
 
+    private CreateUserRequest createUserRequest;
+
     private UserRepository userRepository = mock(UserRepository.class);
 
     private CartRepository cartRepository = mock(CartRepository.class);
 
     private BCryptPasswordEncoder encoder = mock(BCryptPasswordEncoder.class);
+
 
     @Before
     public void setup() {
@@ -32,6 +35,12 @@ public class UserControllerTest {
         TestUtils.injectObjects(userController, "userRepository", userRepository);
         TestUtils.injectObjects(userController, "cartRepository", cartRepository);
         TestUtils.injectObjects(userController, "bCryptPasswordEncoder", encoder);
+
+        createUserRequest = new CreateUserRequest();
+        createUserRequest.setUsername("Beholder");
+        createUserRequest.setPassword("qwertyuiop");
+        createUserRequest.setConfirmPassword("qwertyuiop");
+
     }
 
     private JWTAuthenticationFilter auth = mock(JWTAuthenticationFilter.class);
@@ -39,84 +48,85 @@ public class UserControllerTest {
     @Test
     public void allGoodRunCreate() {
         when(encoder.encode("qwertyuiop")).thenReturn("encodedPassword");
-        CreateUserRequest r = new CreateUserRequest();
-        r.setUsername("Abaddon");
-        r.setPassword("qwertyuiop");
-        r.setConfirmPassword("qwertyuiop");
 
-        ResponseEntity<User> response = userController.createUser(r);
+        ResponseEntity<User> response = userController.createUser(createUserRequest);
 
         assertNotNull(response);
         assertEquals(200, response.getStatusCodeValue());
 
-        User u = response.getBody();
-        assertNotNull(u);
-        assertEquals(0, u.getId());
-        assertEquals(r.getUsername(), u.getUsername());
-        assertEquals("encodedPassword", u.getPassword());
+        User user = response.getBody();
+        assertNotNull(user);
+        assertEquals(0, user.getId());
+        assertEquals(createUserRequest.getUsername(), user.getUsername());
+        assertEquals("encodedPassword", user.getPassword());
+    }
+
+    @Test
+    public void FindByIdLoggedIn() {
+        ResponseEntity<User> response = userController.createUser(createUserRequest);
+
+        User userCreated = response.getBody();
+        when(userRepository.findById(userCreated.getId())).thenReturn(java.util.Optional.of(userCreated));
+
+        ResponseEntity<User> response1 = userController.findById(userCreated.getId());
+
+        assertNotNull(response1);
+        assertEquals(200, response1.getStatusCodeValue());
+
+        User userLoggedIn = response1.getBody();
+        assertNotNull(userLoggedIn);
+        assertEquals(userCreated.getId(), userLoggedIn.getId());
+        assertEquals(createUserRequest.getUsername(), userLoggedIn.getUsername());
+    }
+
+    @Test
+    public void FindByNameLoggedIn() {
+        ResponseEntity<User> response = userController.createUser(createUserRequest);
+
+        User userCreated = response.getBody();
+        when(userRepository.findByUsername(userCreated.getUsername())).thenReturn(userCreated);
+
+        ResponseEntity<User> response1 = userController.findByUserName(userCreated.getUsername());
+
+        assertNotNull(response1);
+        assertEquals(200, response1.getStatusCodeValue());
+
+        User userLoggedIn = response1.getBody();
+        assertNotNull(userLoggedIn);
+        assertEquals(userCreated.getId(), userLoggedIn.getId());
+        assertEquals(createUserRequest.getUsername(), userLoggedIn.getUsername());
     }
 
     @Test
     public void BadRunInvalidPasswords() {
 
-        CreateUserRequest r = new CreateUserRequest();
-        r.setUsername("Abaddon");
-        r.setPassword("qwertyuiop");
-        r.setConfirmPassword("qwertyuiodp");
-
+        createUserRequest.setConfirmPassword("qwertyuiopaf");
         when(encoder.encode("qwertyuiop")).thenReturn("encodedPassword");
 
-        ResponseEntity<User> response = userController.createUser(r);
+        ResponseEntity<User> response = userController.createUser(createUserRequest);
 
         assertNotNull(response);
         assertEquals(400, response.getStatusCodeValue());
     }
 
     @Test
-    public void FindByIdLogged() {
-        when(encoder.encode("qwertyuiop")).thenReturn("encodedPassword");
-        CreateUserRequest r = new CreateUserRequest();
-        r.setUsername("Abaddon");
-        r.setPassword("qwertyuiop");
-        r.setConfirmPassword("qwertyuiop");
+    public void FindByIdNotLoggedIn() {
+        ResponseEntity<User> response = userController.findById(0L);
 
-        ResponseEntity<User> response = userController.createUser(r);
-
-        when(encoder.matches(r.getPassword(),encoder.encode(r.getPassword()))).thenReturn(true);
-        ResponseEntity<User> response1 = userController.findById(0L);
-
-        assertNotNull(response1);
-        assertEquals(200, response.getStatusCodeValue());
-
-        User u = response.getBody();
-        assertNotNull(u);
-        assertEquals(0, u.getId());
-        assertEquals(r.getUsername(), u.getUsername());
-        assertEquals("encodedPassword", u.getPassword());
+        assertNotNull(response);
+        assertEquals(404, response.getStatusCodeValue());
 
     }
 
     @Test
-    public void FindByNameLogged() {
-        when(encoder.encode("qwertyuiop")).thenReturn("encodedPassword");
-        CreateUserRequest r = new CreateUserRequest();
-        r.setUsername("Abaddon");
-        r.setPassword("qwertyuiop");
-        r.setConfirmPassword("qwertyuiop");
+    public void FindByNameNotLoggedIn() {
+        ResponseEntity<User> response = userController.findByUserName("Beholder");
 
-        ResponseEntity<User> response = userController.createUser(r);
-
-        when(encoder.matches(r.getPassword(),encoder.encode(r.getPassword()))).thenReturn(true);
-        ResponseEntity<User> response1 = userController.findByUserName(r.getUsername());
-
-        assertNotNull(response1);
-        assertEquals(200, response.getStatusCodeValue());
-
-        User u = response.getBody();
-        assertNotNull(u);
-        assertEquals(0, u.getId());
-        assertEquals(r.getUsername(), u.getUsername());
-        assertEquals("encodedPassword", u.getPassword());
+        assertNotNull(response);
+        assertEquals(404, response.getStatusCodeValue());
 
     }
+
+
+
 }

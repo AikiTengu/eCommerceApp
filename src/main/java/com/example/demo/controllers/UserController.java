@@ -35,18 +35,20 @@ public class UserController {
 
 	@GetMapping("/id/{id}")
 	public ResponseEntity<User> findById(@PathVariable Long id) {
+		log.debug("Attempting to find user with id {}", id);
 		return ResponseEntity.of(userRepository.findById(id));
 	}
 	
 	@GetMapping("/{username}")
 	public ResponseEntity<User> findByUserName(@PathVariable String username) {
+		log.debug("Attempting to find user with username {}", username);
 		User user = userRepository.findByUsername(username);
 		return user == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(user);
 	}
 	
 	@PostMapping("/create")
 	public ResponseEntity<User> createUser(@RequestBody CreateUserRequest createUserRequest) {
-		log.info("Attempting to create user with username {}", createUserRequest.getUsername());
+		log.debug("Attempting to create user with username {}", createUserRequest.getUsername());
 
 		User user = new User();
 		user.setUsername(createUserRequest.getUsername());
