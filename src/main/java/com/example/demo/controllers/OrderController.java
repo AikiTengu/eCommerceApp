@@ -37,12 +37,12 @@ public class OrderController {
 		log.debug("Submitting order for username {}", username);
 		User user = userRepository.findByUsername(username);
 		if(user == null) {
-			log.info("Order is empty. Cannot find user {}", username);
+			log.info("FAILURE:SUBMITORDER: no user {}", username);
 			return ResponseEntity.notFound().build();
 		}
 		UserOrder order = UserOrder.createFromCart(user.getCart());
 		orderRepository.save(order);
-		log.info("Successfully submitted an order of user {}", username);
+		log.info("SUCCESS:SUBMITORDER: user {}", username);
 		return ResponseEntity.ok(order);
 	}
 	
@@ -51,10 +51,10 @@ public class OrderController {
 		log.debug("Finding order for username {}", username);
 		User user = userRepository.findByUsername(username);
 		if(user == null) {
-			log.info("Order is empty. Cannot find user {}", username);
+			log.info("FAILURE:FINDORDER: no user {}", username);
 			return ResponseEntity.notFound().build();
 		}
-		log.info("Successfully found an order of user {}", username);
+		log.info("SUCCESS:FINDORDER: user {}", username);
 		return ResponseEntity.ok(orderRepository.findByUser(user));
 	}
 }

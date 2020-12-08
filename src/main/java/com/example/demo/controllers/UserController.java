@@ -58,13 +58,13 @@ public class UserController {
 
 		if (createUserRequest.getPassword().length() < 7 ||
 				!createUserRequest.getPassword().equals(createUserRequest.getConfirmPassword())) {
-			log.error("Cannot create user {} because the password is invalid", createUserRequest.getUsername());
+			log.info("FAILURE:CREATEUSER: user {} invalid password", createUserRequest.getUsername());
 			return ResponseEntity.badRequest().build();
 		}
 		user.setPassword(bCryptPasswordEncoder.encode(createUserRequest.getPassword()));
 
 		userRepository.save(user);
-		log.info("Successfully created user {}", createUserRequest.getUsername());
+		log.info("SUCCESS:CREATEUSER: user {}", createUserRequest.getUsername());
 		return ResponseEntity.ok(user);
 	}
 	
